@@ -1257,6 +1257,16 @@ export async function getAuthOptions(
             return false;
           }
 
+          // Invitations and account linking match on email, so only accept
+          // addresses Google has verified the user owns.
+          if (
+            account?.provider === "google" &&
+            (profile as GoogleProfile | undefined)?.email_verified !== true
+          ) {
+            logger.info("Blocked Google sign in with unverified email");
+            return false;
+          }
+
           // Optional configuration: validate authorised email domains for google provider
           // uses hd (hosted domain) claim from google profile as the domain
           // https://developers.google.com/identity/openid-connect/openid-connect#an-id-tokens-payload

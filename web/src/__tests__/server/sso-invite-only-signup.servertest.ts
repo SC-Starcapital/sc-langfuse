@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { env } from "@/src/env.mjs";
-import { createExtendedPrismaAdapter } from "@/src/server/auth";
+import { createExtendedPrismaAdapter, getAuthOptions } from "@/src/server/auth";
 import { prisma } from "@langfuse/shared/src/db";
 import { Role } from "@langfuse/shared";
 
@@ -80,6 +80,28 @@ describe("createExtendedPrismaAdapter.createUser with sign-up enabled", () => {
     ).resolves.toMatchObject({ email });
   });
 });
+
+describe("signIn callback for Google", () => {
+  // invitations and account linking match on email, so it must be verified
+  it("rejects a profile whose email is not verified", async () => {
+    await expect(googleSignIn({ email_verified: false })).resolves.toBe(false);
+    await expect(googleSignIn({})).resolves.toBe(false);
+  });
+
+  it("accepts a profile whose email is verified", async () => {
+    await expect(googleSignIn({ email_verified: true })).resolves.toBe(true);
+  });
+});
+
+async function googleSignIn(profile: { email_verified?: boolean }) {
+  const signIn = (await getAuthOptions()).callbacks?.signIn;
+  if (!signIn) throw new Error("signIn callback missing");
+  return signIn({
+    user: { id: randomUUID(), email: uniqueEmail() },
+    account: { provider: "google", type: "oauth", providerAccountId: "1" },
+    profile: profile as any,
+  });
+}
 
 function uniqueEmail() {
   return `invited-user-${randomUUID()}@example.com`;
