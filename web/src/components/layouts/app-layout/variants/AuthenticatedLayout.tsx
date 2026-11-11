@@ -224,6 +224,15 @@ export function AuthenticatedLayout({
       name: "Settings",
       href: accountSettingsPath(currentOrganization?.id),
     },
+    ...(user.instanceOwner === true
+      ? [
+          {
+            type: "link" as const,
+            name: "Instance administration",
+            href: "/instance-admin",
+          },
+        ]
+      : []),
     ...(showV4Migration
       ? [
           {

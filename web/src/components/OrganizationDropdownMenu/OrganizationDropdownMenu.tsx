@@ -1,3 +1,4 @@
+import { Badge } from "@/src/components/design-system/Badge/Badge";
 import { DropdownMenu } from "@/src/components/design-system/DropdownMenu/DropdownMenu";
 import { PlusIcon, Settings } from "@langfuse/icons";
 import { type Session } from "next-auth";
@@ -44,6 +45,9 @@ export function OrganizationDropdownMenu(props: OrganizationDropdownMenuProps) {
                 noCapture: true,
                 title: organization.name,
                 href: getOrgPath(organization.id),
+                badge: organization.instanceOwnerAccess ? (
+                  <Badge color="filled" size="sm" text="System owner access" />
+                ) : undefined,
                 secondaryAction: {
                   href: `/organization/${organization.id}/settings`,
                   ariaLabel: `Go to settings for ${organization.name}`,

@@ -10,6 +10,7 @@ import { projectApiKeysRouter } from "@/src/features/public-api/server/projectAp
 import { membersRouter } from "@/src/features/rbac/server/membersRouter";
 import { userRouter } from "@/src/server/api/routers/users";
 import { userAccountRouter } from "@/src/server/api/routers/userAccount";
+import { instanceAdminRouter } from "@/src/features/instance-admin/server/instanceAdminRouter";
 import { datasetRouter } from "@/src/features/datasets/server/dataset-router";
 import { cloudBillingRouter } from "@/src/ee/features/billing/server/cloudBillingRouter";
 import { spendAlertRouter } from "@/src/ee/features/billing/server/spendAlertRouter";
@@ -96,6 +97,7 @@ export const appRouter = createTRPCRouter({
   projects: projectsRouter,
   users: userRouter,
   userAccount: userAccountRouter,
+  instanceAdmin: instanceAdminRouter,
   projectApiKeys: projectApiKeysRouter,
   members: membersRouter,
   datasets: datasetRouter,

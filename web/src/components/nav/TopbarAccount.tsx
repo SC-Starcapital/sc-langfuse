@@ -71,6 +71,11 @@ export const TopbarAccount = ({
         <DropdownMenuItem asChild>
           <Link href={accountSettingsPath(organization?.id)}>Settings</Link>
         </DropdownMenuItem>
+        {user.instanceOwner === true ? (
+          <DropdownMenuItem asChild>
+            <Link href="/instance-admin">Instance administration</Link>
+          </DropdownMenuItem>
+        ) : null}
         {showV4Migration ? (
           <DropdownMenuItem asChild>
             <Link href="/v4-migration">V4 migration</Link>

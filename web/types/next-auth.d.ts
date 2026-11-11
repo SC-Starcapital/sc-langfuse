@@ -33,11 +33,13 @@ declare module "next-auth" {
           v4UpgradeUiAvailable?: boolean;
           emailVerified?: string | null; // iso datetime string, need to stringify as JWT & useSession do not support Date objects
           canCreateOrganizations: boolean; // default true, allowlist can be set via LANGFUSE_ALLOWED_ORGANIZATION_CREATORS
+          instanceOwner?: boolean; // owner access to every organization on this instance
           organizations: {
             id: PrismaOrganization["id"];
             name: PrismaOrganization["name"];
             role: Role;
             supportAccess?: boolean; // granted through a ConductorOne support access request, not a real membership
+            instanceOwnerAccess?: boolean; // reached through the instance owner right, not a real membership
             cloudConfig: CloudConfigSchema | undefined;
             plan: Plan;
             metadata: Record<string, unknown>;
