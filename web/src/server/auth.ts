@@ -70,6 +70,10 @@ import {
 } from "@/src/ee/features/multi-tenant-sso/utils";
 import { getSupportAccessMemberships } from "@/src/ee/features/support-access/server/supportAccess";
 import {
+  getInstanceOwnerMemberships,
+  isInstanceOwner,
+} from "@/src/features/instance-admin/server/instanceOwner";
+import {
   ENTERPRISE_SSO_REQUIRED_MESSAGE,
   MULTI_TENANT_SSO_DOMAIN_MISMATCH_MESSAGE,
   PASSWORD_RESET_REQUIRED_MESSAGE,
@@ -909,6 +913,7 @@ export async function getAuthOptions(
               featureFlags: true,
               v4BetaEnabled: true,
               supportAccess: true,
+              instanceOwner: true,
               organizationMemberships: {
                 // Newest first so demo project is last for the `project/~/` sentinel
                 orderBy: {
@@ -942,9 +947,26 @@ export async function getAuthOptions(
           span.setAttribute("langfuse.user.id", dbUser?.id ?? "");
           // Support engineers with an unexpired ConductorOne grant see the
           // org as VIEWER.
-          const organizationMemberships = [
+          const ownMemberships = [
             ...(dbUser?.organizationMemberships ?? []),
             ...(await getSupportAccessMemberships(dbUser)),
+          ];
+          // Instance owners act as OWNER everywhere, including organizations
+          // where their own membership has a lower role.
+          // Other organizations are appended last so the user's own keep
+          // their order.
+          const organizationMemberships = [
+            ...(isInstanceOwner(dbUser)
+              ? ownMemberships.map((m) => ({
+                  ...m,
+                  role: "OWNER" as const,
+                  ProjectMemberships: [],
+                }))
+              : ownMemberships),
+            ...(await getInstanceOwnerMemberships(
+              dbUser,
+              ownMemberships.map((m) => m.organization.id),
+            )),
           ];
           // V4 preview availability is governed by the write mode:
           // - events_only: the legacy traces/observations tables are no longer
@@ -1039,6 +1061,7 @@ export async function getAuthOptions(
                     canCreateOrganizations: canCreateOrganizations(
                       dbUser.email,
                     ),
+                    instanceOwner: isInstanceOwner(dbUser),
                     organizations: organizationMemberships.map(
                       (orgMembership) => {
                         const parsedCloudConfig = CloudConfigSchema.safeParse(
@@ -1049,6 +1072,8 @@ export async function getAuthOptions(
                           name: orgMembership.organization.name,
                           role: orgMembership.role,
                           supportAccess: "supportAccess" in orgMembership,
+                          instanceOwnerAccess:
+                            "instanceOwnerAccess" in orgMembership,
                           metadata:
                             (orgMembership.organization.metadata as Record<
                               string,

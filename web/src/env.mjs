@@ -589,6 +589,9 @@ export const env = createEnv({
     LANGFUSE_INIT_USER_EMAIL: z
       .union([z.email(), z.string().length(0)])
       .optional(),
+    LANGFUSE_INIT_INSTANCE_OWNER_EMAIL: z
+      .union([z.email(), z.string().length(0)])
+      .optional(),
     LANGFUSE_INIT_USER_NAME: z.string().optional(),
     LANGFUSE_INIT_USER_PASSWORD: z.string().optional(),
     LANGFUSE_MAX_HISTORIC_EVAL_CREATION_LIMIT: z.coerce
@@ -1316,6 +1319,8 @@ export const env = createEnv({
     LANGFUSE_INIT_PROJECT_SECRET_KEY:
       process.env.LANGFUSE_INIT_PROJECT_SECRET_KEY,
     LANGFUSE_INIT_USER_EMAIL: process.env.LANGFUSE_INIT_USER_EMAIL,
+    LANGFUSE_INIT_INSTANCE_OWNER_EMAIL:
+      process.env.LANGFUSE_INIT_INSTANCE_OWNER_EMAIL,
     LANGFUSE_INIT_USER_NAME: process.env.LANGFUSE_INIT_USER_NAME,
     LANGFUSE_INIT_USER_PASSWORD: process.env.LANGFUSE_INIT_USER_PASSWORD,
     NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,

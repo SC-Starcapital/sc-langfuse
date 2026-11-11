@@ -6,6 +6,7 @@ import {
   PlusIcon,
   Waypoints,
 } from "@langfuse/icons";
+import { Badge } from "@/src/components/design-system/Badge/Badge";
 import {
   Card,
   CardContent,
@@ -274,6 +275,9 @@ const SingleOrganizationPage = ({
     <ContainerPage
       headerProps={{
         title: "Projects",
+        titleBadges: org.instanceOwnerAccess ? (
+          <Badge text="System owner access" />
+        ) : undefined,
         actionButtonsRight: <OrganizationActionButtons orgId={org.id} />,
       }}
     >
