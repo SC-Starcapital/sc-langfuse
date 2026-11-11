@@ -501,6 +501,11 @@ const signInErrors = [
     description:
       "Please sign in with the same provider (e.g. Google, GitHub, Azure AD, etc.) that you used to create this account.",
   },
+  {
+    code: "OAuthCreateAccount",
+    description:
+      "Could not create account. Access is by invitation only. Ask an admin to invite this email address.",
+  },
 ];
 
 export default function SignInPage({
