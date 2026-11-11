@@ -705,7 +705,7 @@ async function completeSignupOnFirstLogin({
   });
 }
 
-const createExtendedPrismaAdapter = (
+export const createExtendedPrismaAdapter = (
   signupAttribution?: SignupAttribution,
 ): Adapter => {
   // the user createUser made in this request; NextAuth links its account next
@@ -720,7 +720,13 @@ const createExtendedPrismaAdapter = (
         env.NEXT_PUBLIC_SIGN_UP_DISABLED === "true" ||
         env.AUTH_DISABLE_SIGNUP === "true"
       ) {
-        throw new Error("Sign up is disabled.");
+        // invited emails may still sign up via SSO: an admin explicitly granted them access
+        const invitation = profile.email
+          ? await prisma.membershipInvitation.findFirst({
+              where: { email: profile.email.toLowerCase() },
+            })
+          : null;
+        if (!invitation) throw new Error("Sign up is disabled.");
       }
       if (!profile.email) {
         throw new Error(
@@ -1248,6 +1254,16 @@ export async function getAuthOptions(
               setTimeout(resolve, Math.random() * 2000 + 200),
             );
             // Prevents sign in with email link if user does not exist
+            return false;
+          }
+
+          // Invitations and account linking match on email, so only accept
+          // addresses Google has verified the user owns.
+          if (
+            account?.provider === "google" &&
+            (profile as GoogleProfile | undefined)?.email_verified !== true
+          ) {
+            logger.info("Blocked Google sign in with unverified email");
             return false;
           }
 
