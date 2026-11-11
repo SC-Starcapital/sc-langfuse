@@ -62,6 +62,10 @@ import { TURNSTILE_ACTIONS } from "@/src/features/auth/constants";
 const PREVIEW_DEMO_USER_EMAIL = "demo@langfuse.com";
 const PREVIEW_DEMO_USER_PASSWORD = "password";
 
+// Entry motion: transform + opacity only, skipped for reduced-motion users.
+const enter =
+  "motion-safe:transition-[opacity,transform] motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.32,0.72,0,1)] motion-safe:starting:translate-y-6 motion-safe:starting:opacity-0";
+
 const credentialAuthForm = z.object({
   email: z.email(),
   password: z.string().min(8, {
@@ -837,178 +841,213 @@ export default function SignInPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col py-6 sm:min-h-full sm:justify-center sm:px-6 sm:py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto w-fit">
+    <div className="relative flex min-h-full flex-1 flex-col justify-center py-10 sm:px-6 lg:py-24">
+      {/* ambient brand glow; fixed so it never repaints with content */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 bg-[radial-gradient(60rem_40rem_at_15%_10%,hsl(var(--muted-magenta)/0.10),transparent_60%),radial-gradient(50rem_36rem_at_90%_90%,hsl(var(--muted-blue)/0.12),transparent_60%)]"
+      />
+
+      <div className="relative mx-auto grid w-full max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-20">
+        <div
+          className={cn(
+            "flex flex-col items-center text-center lg:items-start lg:text-left",
+            enter,
+          )}
+        >
           <LangfuseWordmark />
+          <span className="text-muted-foreground ring-border mt-10 rounded-full px-3 py-1 text-[10px] tracking-[0.2em] uppercase ring-1">
+            {signUpDisabled ? "Invitation only" : "Welcome back"}
+          </span>
+          <h2 className="text-primary mt-5 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl">
+            Sign in to your account
+          </h2>
+          <p className="text-muted-foreground mt-5 max-w-sm text-base text-pretty">
+            {signUpDisabled
+              ? "Access is by invitation. Use the account your invitation was sent to."
+              : "Pick up where you left off."}
+          </p>
         </div>
-        <h2 className="text-primary mt-4 text-center text-2xl leading-9 font-bold tracking-tight">
-          Sign in to your account
-        </h2>
-      </div>
 
-      {isLangfuseCloud && (
-        <div className="bg-card mt-4 -mb-4 rounded-lg p-3 text-center text-sm shadow-sm sm:mx-auto sm:w-full sm:max-w-[480px] sm:px-6">
-          If you are experiencing issues signing in, please force refresh this
-          page (CMD + SHIFT + R) or clear your browser cache.{" "}
-          <a
-            href="mailto:support@langfuse.com"
-            className="text-link hover:text-link-hover cursor-pointer text-xs font-bold whitespace-nowrap"
-          >
-            (contact us)
-          </a>
-        </div>
-      )}
-
-      {isLangfuseCloud && <CloudRegionSwitch />}
-
-      <div className="bg-card mt-14 rounded-lg px-6 py-10 shadow-sm sm:mx-auto sm:w-full sm:max-w-[480px] sm:px-10">
-        <div className="space-y-6">
-          {/* Email / (optional) password form – only when credentials auth is enabled */}
-          {authProviders.credentials && (
-            <div>
-              <Form {...credentialsForm}>
-                <form
-                  className="space-y-6"
-                  onSubmit={
-                    showPasswordStep
-                      ? credentialsForm.handleSubmit(onCredentialsSubmit)
-                      : (e) => {
-                          e.preventDefault();
-                          handleContinue();
-                        }
-                  }
-                >
-                  {/* Email input – always visible */}
-                  <FormField
-                    control={credentialsForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="jsdoe@example.com"
-                            allowPasswordManager
-                            autoComplete="email"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Password only shown once we know SSO is not configured */}
-                  {showPasswordStep && (
-                    <FormField
-                      control={credentialsForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Password{" "}
-                            <Link
-                              href={resetPasswordHref}
-                              className="text-link hover:text-link-hover ml-1 text-xs"
-                              tabIndex={-1}
-                              title="What is this?"
-                            >
-                              (forgot password?)
-                            </Link>
-                          </FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              allowPasswordManager
-                              autoComplete="current-password"
-                              autoFocus={authProviders.sso}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  {showPasswordStep && turnstileSiteKey && (
-                    <TurnstileWidget
-                      ref={turnstileRef}
-                      siteKey={turnstileSiteKey}
-                      action={TURNSTILE_ACTIONS.login}
-                      onTokenChange={setTurnstileToken}
-                    />
-                  )}
-
-                  {/* Primary action button */}
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    loading={
-                      showPasswordStep
-                        ? credentialsForm.formState.isSubmitting
-                        : continueLoading
-                    }
-                    disabled={
-                      (showPasswordStep &&
-                        Boolean(turnstileSiteKey) &&
-                        !turnstileToken) ||
-                      credentialsForm.watch("email") === "" ||
-                      (showPasswordStep &&
-                        credentialsForm.watch("password") === "")
-                    }
-                    data-testid="submit-email-password-sign-in-form"
-                  >
-                    {showPasswordStep ? "Sign in" : "Continue"}
-                  </Button>
-                </form>
-              </Form>
-              <div
-                className={cn(
-                  "text-muted-foreground mt-1 text-center text-xs",
-                  hasMultipleAuthMethods && lastUsedAuthMethod === "credentials"
-                    ? "block"
-                    : "hidden",
-                )}
+        <div
+          className={cn(
+            "w-full motion-safe:delay-100 sm:mx-auto sm:max-w-[480px]",
+            enter,
+          )}
+        >
+          {isLangfuseCloud && (
+            <div className="bg-card mb-4 rounded-2xl p-3 text-center text-sm shadow-sm sm:px-6">
+              If you are experiencing issues signing in, please force refresh
+              this page (CMD + SHIFT + R) or clear your browser cache.{" "}
+              <a
+                href="mailto:support@langfuse.com"
+                className="text-link hover:text-link-hover cursor-pointer text-xs font-bold whitespace-nowrap"
               >
-                Last used
-              </div>
+                (contact us)
+              </a>
             </div>
           )}
-          {credentialsFormError ? (
-            <div className="text-destructive text-center text-sm font-bold">
-              {credentialsFormError}
-              <br />
-              Contact support if this error is unexpected.{" "}
-              {isLangfuseCloud &&
-                "Make sure you are using the correct cloud data region."}
-            </div>
-          ) : null}
-          <SSOButtons
-            authProviders={authProviders}
-            callbackUrl={targetPath}
-            lastUsedMethod={lastUsedAuthMethod}
-            onProviderSelect={setLastUsedAuthMethod}
-          />
-        </div>
 
-        {!signUpDisabled &&
-        env.NEXT_PUBLIC_SIGN_UP_DISABLED !== "true" &&
-        authProviders.credentials ? (
-          <p className="text-muted-foreground mt-10 text-center text-sm">
-            No account yet?{" "}
-            <Link
-              href={`/auth/sign-up${router.asPath.includes("?") ? router.asPath.substring(router.asPath.indexOf("?")) : ""}`}
-              className="text-link hover:text-link-hover font-bold"
-            >
-              Sign up
-            </Link>
-          </p>
-        ) : null}
+          {isLangfuseCloud && <CloudRegionSwitch />}
+
+          {/* double bezel: outer tray + inner plate with concentric radii */}
+          <div className="bg-primary/[0.04] ring-primary/10 rounded-[2rem] p-1.5 ring-1">
+            <div className="bg-card rounded-[calc(2rem-0.375rem)] px-6 py-10 shadow-[inset_0_1px_0_hsl(var(--primary)/0.08)] sm:px-10">
+              <div className="space-y-6">
+                {/* Email / (optional) password form – only when credentials auth is enabled */}
+                {authProviders.credentials && (
+                  <div>
+                    <Form {...credentialsForm}>
+                      <form
+                        className="space-y-6"
+                        onSubmit={
+                          showPasswordStep
+                            ? credentialsForm.handleSubmit(onCredentialsSubmit)
+                            : (e) => {
+                                e.preventDefault();
+                                handleContinue();
+                              }
+                        }
+                      >
+                        {/* Email input – always visible */}
+                        <FormField
+                          control={credentialsForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="jsdoe@example.com"
+                                  allowPasswordManager
+                                  autoComplete="email"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Password only shown once we know SSO is not configured */}
+                        {showPasswordStep && (
+                          <FormField
+                            control={credentialsForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  Password{" "}
+                                  <Link
+                                    href={resetPasswordHref}
+                                    className="text-link hover:text-link-hover ml-1 text-xs"
+                                    tabIndex={-1}
+                                    title="What is this?"
+                                  >
+                                    (forgot password?)
+                                  </Link>
+                                </FormLabel>
+                                <FormControl>
+                                  <PasswordInput
+                                    allowPasswordManager
+                                    autoComplete="current-password"
+                                    autoFocus={authProviders.sso}
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
+                        {showPasswordStep && turnstileSiteKey && (
+                          <TurnstileWidget
+                            ref={turnstileRef}
+                            siteKey={turnstileSiteKey}
+                            action={TURNSTILE_ACTIONS.login}
+                            onTokenChange={setTurnstileToken}
+                          />
+                        )}
+
+                        {/* Primary action button */}
+                        <Button
+                          type="submit"
+                          className="w-full"
+                          loading={
+                            showPasswordStep
+                              ? credentialsForm.formState.isSubmitting
+                              : continueLoading
+                          }
+                          disabled={
+                            (showPasswordStep &&
+                              Boolean(turnstileSiteKey) &&
+                              !turnstileToken) ||
+                            credentialsForm.watch("email") === "" ||
+                            (showPasswordStep &&
+                              credentialsForm.watch("password") === "")
+                          }
+                          data-testid="submit-email-password-sign-in-form"
+                        >
+                          {showPasswordStep ? "Sign in" : "Continue"}
+                        </Button>
+                      </form>
+                    </Form>
+                    <div
+                      className={cn(
+                        "text-muted-foreground mt-1 text-center text-xs",
+                        hasMultipleAuthMethods &&
+                          lastUsedAuthMethod === "credentials"
+                          ? "block"
+                          : "hidden",
+                      )}
+                    >
+                      Last used
+                    </div>
+                  </div>
+                )}
+                {credentialsFormError ? (
+                  <div className="text-destructive text-center text-sm font-bold">
+                    {credentialsFormError}
+                    <br />
+                    Contact support if this error is unexpected.{" "}
+                    {isLangfuseCloud &&
+                      "Make sure you are using the correct cloud data region."}
+                  </div>
+                ) : null}
+                {!authProviders.credentials && (
+                  <p className="text-muted-foreground text-center text-xs tracking-[0.2em] uppercase">
+                    Continue with
+                  </p>
+                )}
+                <SSOButtons
+                  authProviders={authProviders}
+                  callbackUrl={targetPath}
+                  lastUsedMethod={lastUsedAuthMethod}
+                  onProviderSelect={setLastUsedAuthMethod}
+                />
+              </div>
+
+              {!signUpDisabled &&
+              env.NEXT_PUBLIC_SIGN_UP_DISABLED !== "true" &&
+              authProviders.credentials ? (
+                <p className="text-muted-foreground mt-10 text-center text-sm">
+                  No account yet?{" "}
+                  <Link
+                    href={`/auth/sign-up${router.asPath.includes("?") ? router.asPath.substring(router.asPath.indexOf("?")) : ""}`}
+                    className="text-link hover:text-link-hover font-bold"
+                  >
+                    Sign up
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION !== undefined && (
+            <CloudPrivacyNotice action="signing in" />
+          )}
+        </div>
       </div>
-      {env.NEXT_PUBLIC_LANGFUSE_CLOUD_REGION !== undefined && (
-        <CloudPrivacyNotice action="signing in" />
-      )}
     </div>
   );
 }

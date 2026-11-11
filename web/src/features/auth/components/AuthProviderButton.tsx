@@ -18,12 +18,14 @@ export function AuthProviderButton({
   showLastUsedBadge = false,
 }: AuthProviderButtonProps) {
   return (
-    <div>
+    // grows to fill the row, so a single provider reads as the primary action
+    <div className="min-w-40 flex-1">
       <Button
         onClick={onClick}
         variant="secondary"
+        size="lg"
         loading={loading}
-        className="w-full"
+        className="w-full rounded-full transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]"
       >
         {icon}
         {label}
